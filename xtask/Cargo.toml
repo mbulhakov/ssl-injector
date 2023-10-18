@@ -1,0 +1,14 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4.1", features = ["derive"] }
+
+#[env]
+#CC_aarch64-unknown-linux-musl = "/usr/lib/clang -target aarch64-unknown-linux-musl -fuse-ld=lld"
+#CXX_aarch64-unknown-linux-musl = "/usr/lib/clang/clang++ -target aarch64-unknown-linux-musl -fuse-ld=lld"
+#CC_x86_64-unknown-linux-musl = "/usr/lib/clang -target x86_64-unknown-linux-musl -fuse-ld=lld"
+#CXX_x86_64-unknown-linux-musl = "/usr/lib/clang++ -target x86_64-unknown-linux-musl -fuse-ld=lld"

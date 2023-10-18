@@ -1,0 +1,38 @@
+appenders:
+  ssl_injector_stdout:
+    kind: console
+    encoder:
+      pattern: " {({l}):5.5} | {M} | {f}:{L}: {m}{n}"
+
+  ssl_injector_rolling_file:
+    kind: rolling_file
+    path: /tmp/ssl-injector/logs/ssl_injector_{}.gz
+    encoder:
+      pattern: " {d(%Y-%m-%d %H:%M:%S)} | [{({l}):5.5}] | {M} | {f}:{L}: {m}{n}"
+    policy:
+      trigger:
+        kind: size
+        limit: 30 mb
+      roller:
+        kind: fixed_window
+        pattern: /tmp/ssl-injector/logs/ssl_injector_{}.gz
+        count: 20
+        base: 1
+
+root:
+  level: info
+  appenders:
+    - ssl_injector_stdout
+    - ssl_injector_rolling_file
+
+loggers:
+  want:
+    level: error
+    appenders:
+      - ssl_injector_stdout
+      - ssl_injector_rolling_file
+  mio::poll:
+    level: error
+    appenders:
+      - ssl_injector_stdout
+      - ssl_injector_rolling_file
