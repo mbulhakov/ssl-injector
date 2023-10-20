@@ -7,9 +7,11 @@ publish = false
 [dependencies]
 aya = { git = "https://github.com/aya-rs/aya", features = ["async_tokio"] }
 aya-log = { git = "https://github.com/aya-rs/aya" }
+bytes = "1"
 ssl-injector-common = { path = "../ssl-injector-common", features = ["user"] }
 anyhow = "1"
 libc = "0.2"
+rand = "0.8.5"
 log = "0.4"
 log4rs = { version = "1.2.0", features = ["gzip"] }
 tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "signal"] }

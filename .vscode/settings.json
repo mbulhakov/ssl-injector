@@ -1,0 +1,7 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "Cargo.toml",
+        "./ssl-injector-ebpf/Cargo.toml"
+    ],
+    "rust-analyzer.cargo.target": "aarch64-unknown-linux-musl"
+}

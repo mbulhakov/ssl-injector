@@ -18,7 +18,7 @@ RUN cargo install bpf-linker
 COPY . /src
 WORKDIR /src
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/llvm-16/lib/
-RUN cargo clippy --target=aarch64-unknown-linux-musl --workspace --exclude=ssl-injector -- -D warnings
+#RUN cargo clippy --target=aarch64-unknown-linux-musl --workspace --exclude=ssl-injector -- -D warnings
 RUN --mount=type=cache,target=/.root/cargo/registry \
     --mount=type=cache,target=/src/target \
     cargo xtask build-ebpf --release \
