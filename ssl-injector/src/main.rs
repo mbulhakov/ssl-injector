@@ -5,26 +5,26 @@ use aya_log::BpfLogger;
 use bytes::BytesMut;
 use log::{debug, error, info, warn};
 use log4rs::config::Deserializers;
-use rand::Rng;
 use ssl_injector_common::SslEntry;
-use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::borrow::Cow;
 use std::mem;
-use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::signal;
 
-fn start_monitoring(bpf: &mut Bpf) -> Result<(), anyhow::Error> {
-    // Process events from the perf buffer
+fn start_monitoring(
+    bpf: &mut Bpf,
+    map_name: Cow<'static, str>,
+    method_name: Cow<'static, str>,
+) -> Result<(), anyhow::Error> {
     let cpus = online_cpus()?;
     let num_cpus = cpus.len();
     let mut events = AsyncPerfEventArray::try_from(
-        bpf.take_map("SSL_WRITE_EVENTS")
+        bpf.take_map(&map_name)
             .ok_or(anyhow!("Failed to take map"))?,
     )?;
     for cpu in cpus {
         let mut buf = events.open(cpu, None)?;
 
-        info!("CPU {}", cpu);
+        let method_name = method_name.clone();
         tokio::task::spawn(async move {
             let mut buffers = (0..num_cpus)
                 .map(|_| BytesMut::with_capacity(mem::size_of::<SslEntry>()))
@@ -38,35 +38,29 @@ fn start_monitoring(bpf: &mut Bpf) -> Result<(), anyhow::Error> {
                 }
                 let events = events.unwrap();
                 for i in 0..events.read {
-                    // read the event
                     let buf = &mut buffers[i];
                     let ptr = buf.as_ptr() as *const SslEntry;
                     let ssl_entry = unsafe { ptr.read_unaligned() };
 
-                    // Get the current timestamp
-                    let timestamp = SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs();
+                    if ssl_entry.size > 0 {
+                        let buffer = &ssl_entry.buffer[..ssl_entry.size];
+                        let buffer_display: Cow<str> = match std::str::from_utf8(&buffer) {
+                            // converting to hex representation in case of failure
+                            Err(_) => Cow::from(format!(
+                                "[HEX] {}",
+                                buffer
+                                    .iter()
+                                    .map(|&value| format!("{:02X}", value))
+                                    .collect::<String>(),
+                            )),
 
-                    // Generate a random string for the file name
-                    let random_string: String = rand::thread_rng()
-                        .sample_iter(&rand::distributions::Alphanumeric)
-                        .take(8)
-                        .map(char::from)
-                        .collect();
+                            Ok(s) => Cow::from(s),
+                        };
 
-                    // Create the random file name
-                    let random_filename = format!("/tmp/{}_{}.txt", timestamp, random_string);
-
-                    // Create and write data to the random file
-                    if let Ok(f) = File::create(&random_filename) {
-                        let mut writer = BufWriter::new(f);
-                        if let Ok(()) = writer.write_all(&ssl_entry.buffer[..ssl_entry.size]) {
-                            println!("Written data to: {}", random_filename);
-                        }
-                    } else {
-                        println!("Failed to create or write to the file.");
+                        info!(
+                            "{}: \n========\n{}\n========\n",
+                            method_name, buffer_display
+                        );
                     }
                 }
             }
@@ -109,12 +103,20 @@ async fn main() -> Result<(), anyhow::Error> {
         // This can happen if you remove all log statements from your eBPF program.
         warn!("failed to initialize eBPF logger: {}", e);
     }
-    let program: &mut UProbe = bpf.program_mut("ssl_write").unwrap().try_into()?;
-    program.load()?;
+    let ssl_write_program: &mut UProbe = bpf.program_mut("ssl_write").unwrap().try_into()?;
+    ssl_write_program.load()?;
+    ssl_write_program.attach(Some("SSL_write"), 0, "libssl", None)?;
 
-    program.attach(Some("SSL_write"), 0, "libssl", None)?;
+    let ssl_write_ret_program: &mut UProbe =
+        bpf.program_mut("ssl_write_ret").unwrap().try_into()?;
+    ssl_write_ret_program.load()?;
+    ssl_write_ret_program.attach(Some("SSL_write"), 0, "libssl", None)?;
 
-    start_monitoring(&mut bpf)?;
+    start_monitoring(
+        &mut bpf,
+        Cow::from("SSL_WRITE_EVENTS"),
+        Cow::from("SSL_write"),
+    )?;
 
     info!("Waiting for Ctrl-C...");
     signal::ctrl_c().await?;

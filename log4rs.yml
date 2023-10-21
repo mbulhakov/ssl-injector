@@ -6,7 +6,7 @@ appenders:
 
   ssl_injector_rolling_file:
     kind: rolling_file
-    path: /tmp/ssl-injector/logs/ssl_injector_{}.gz
+    path: /tmp/ssl-injector/logs/ssl_injector.log
     encoder:
       pattern: " {d(%Y-%m-%d %H:%M:%S)} | [{({l}):5.5}] | {M} | {f}:{L}: {m}{n}"
     policy:
