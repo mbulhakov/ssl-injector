@@ -11,6 +11,27 @@ use std::fmt::Write;
 use std::mem;
 use tokio::signal;
 
+fn prepare_programs(bpf: &mut Bpf) -> Result<(), anyhow::Error> {
+    let ssl_write_program: &mut UProbe = bpf.program_mut("ssl_write").unwrap().try_into()?;
+    ssl_write_program.load()?;
+    ssl_write_program.attach(Some("SSL_write"), 0, "libssl", None)?;
+
+    let ssl_write_ret_program: &mut UProbe =
+        bpf.program_mut("ssl_write_ret").unwrap().try_into()?;
+    ssl_write_ret_program.load()?;
+    ssl_write_ret_program.attach(Some("SSL_write"), 0, "libssl", None)?;
+
+    let ssl_read_program: &mut UProbe = bpf.program_mut("ssl_read").unwrap().try_into()?;
+    ssl_read_program.load()?;
+    ssl_read_program.attach(Some("SSL_read"), 0, "libssl", None)?;
+
+    let ssl_read_ret_program: &mut UProbe = bpf.program_mut("ssl_read_ret").unwrap().try_into()?;
+    ssl_read_ret_program.load()?;
+    ssl_read_ret_program.attach(Some("SSL_read"), 0, "libssl", None)?;
+
+    Ok(())
+}
+
 fn start_monitoring(
     bpf: &mut Bpf,
     map_name: Cow<'static, str>,
@@ -103,19 +124,19 @@ async fn main() -> Result<(), anyhow::Error> {
         // This can happen if you remove all log statements from your eBPF program.
         warn!("failed to initialize eBPF logger: {}", e);
     }
-    let ssl_write_program: &mut UProbe = bpf.program_mut("ssl_write").unwrap().try_into()?;
-    ssl_write_program.load()?;
-    ssl_write_program.attach(Some("SSL_write"), 0, "libssl", None)?;
 
-    let ssl_write_ret_program: &mut UProbe =
-        bpf.program_mut("ssl_write_ret").unwrap().try_into()?;
-    ssl_write_ret_program.load()?;
-    ssl_write_ret_program.attach(Some("SSL_write"), 0, "libssl", None)?;
+    prepare_programs(&mut bpf)?;
 
     start_monitoring(
         &mut bpf,
         Cow::from("SSL_WRITE_EVENTS"),
         Cow::from("SSL_write"),
+    )?;
+
+    start_monitoring(
+        &mut bpf,
+        Cow::from("SSL_READ_EVENTS"),
+        Cow::from("SSL_read"),
     )?;
 
     info!("Waiting for Ctrl-C...");
