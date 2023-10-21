@@ -40,7 +40,10 @@ RUN --mount=type=cache,target=/.root/cargo/registry \
 # Use a multi-stage build for the final stage
 FROM --platform=$DOCKER_PLATFORM debian:bullseye
 
-RUN apt update && apt install -y curl
+RUN apt update && \
+    apt install -y \
+        curl \
+        bc
 
 # Copy the ssl-injector binary and log4rs configuration from the builder stage
 COPY --from=builder /usr/sbin/ssl-injector /usr/sbin/

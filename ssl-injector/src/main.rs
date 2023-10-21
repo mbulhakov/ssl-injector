@@ -58,7 +58,7 @@ fn start_monitoring(
                         };
 
                         info!(
-                            "{}: \n========\n{}\n========\n",
+                            "\n========>\n{}:\n\n{}\n<========\n",
                             method_name, buffer_display
                         );
                     }
