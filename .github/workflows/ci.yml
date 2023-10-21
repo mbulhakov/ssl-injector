@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - main  # Change this to the branch you want to trigger the workflow
+      - main
 
 jobs:
   build:
@@ -16,5 +16,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
+      - name: Cache Docker Layers
+        uses: docker/setup-buildx-action@v1
+        with:
+          dockerfile: Dockerfile.template
+          cache-from: type=local,src=my-cache
+
       - name: Build Docker Image
-        run: docker buildx build --file Dockerfile.template --platform linux/amd64 --build-arg DOCKER_PLATFORM=linux/amd64 --build-arg CARGO_TARGET=x86_64-unknown-linux-musl -t ssl-injector .
+        run: docker buildx build --file Dockerfile.template --platform linux/amd64 --build-arg DOCKER_PLATFORM=linux/amd64 --build-arg CARGO_TARGET=x86_64-unknown-linux-musl .
+
+      - name: Cache Docker Layers (after build)
+        uses: docker/setup-buildx-action@v1
+        with:
+          dockerfile: Dockerfile.template
+          push-cache: type=local,dest=my-cache
