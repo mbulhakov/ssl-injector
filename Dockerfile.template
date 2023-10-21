@@ -28,10 +28,10 @@ WORKDIR /src
 # Needed for the compilation of eBPF part
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/llvm-16/lib/
 
-RUN cargo clippy --target=$CARGO_TARGET --workspace -- -D warnings
 RUN --mount=type=cache,target=/.root/cargo/registry \
     --mount=type=cache,target=/src/target \
     cargo xtask build-ebpf --release \
+    && cargo clippy --target=$CARGO_TARGET --workspace --release -- -D warnings \
     && cargo build --release --target=$CARGO_TARGET \
     && cp /src/target/$CARGO_TARGET/release/ssl-injector /usr/sbin \
     && cp /src/log4rs.yml /usr/sbin
