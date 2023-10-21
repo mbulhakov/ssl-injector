@@ -11,7 +11,7 @@
 
 ## Build
 
-Only Docker image build is supported, but one can repeat it locally using commands from the image.
+Only Docker image build is supported, but one can repeat it locally using commands from the Dockerfile.
 
 To ease the burden of possible different architectures (hi Apple silicon) use the following script to build the image:
 
