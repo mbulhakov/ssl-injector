@@ -1,26 +1,27 @@
+
 # ssl-injector
 
-## Prerequisites
+[eBPF](https://ebpf.io/) monitor application using [aya.rs](https://github.com/aya-rs/aya) to capture SSL_write/SSL_read calls using uprobe/uretprobe. Logs captured content both in the console and in a temporary folder.
 
-1. Install bpf-linker: `cargo install bpf-linker`
+## Prerequisites  
 
-## Build eBPF
+1. Linux or Mac (tested on M2, but Intel chips should work as well)
+2. Docker
+
+
+## Build
+
+Only Docker image build is supported, but one can repeat it locally using commands from the image.
+
+To ease the burden of possible different architectures (hi Apple silicon) use the following script to build the image:
 
 ```bash
-cargo xtask build-ebpf
-```
-
-To perform a release build you can use the `--release` flag.
-You may also change the target architecture with the `--target` flag.
-
-## Build Userspace
-
-```bash
-cargo build
-```
+./build_docker.sh
+``` 
 
 ## Run
 
+
 ```bash
-RUST_LOG=info cargo xtask run
+./run_docker.sh
 ```
