@@ -7,6 +7,7 @@ use log::{debug, error, info, warn};
 use log4rs::config::Deserializers;
 use ssl_injector_common::SslEntry;
 use std::borrow::Cow;
+use std::fmt::Write;
 use std::mem;
 use tokio::signal;
 
@@ -37,21 +38,20 @@ fn start_monitoring(
                     continue;
                 }
                 let events = events.unwrap();
-                for i in 0..events.read {
-                    let buf = &mut buffers[i];
+                for buf in buffers.iter_mut().take(events.read) {
                     let ptr = buf.as_ptr() as *const SslEntry;
                     let ssl_entry = unsafe { ptr.read_unaligned() };
 
                     if ssl_entry.size > 0 {
                         let buffer = &ssl_entry.buffer[..ssl_entry.size];
-                        let buffer_display: Cow<str> = match std::str::from_utf8(&buffer) {
+                        let buffer_display: Cow<str> = match std::str::from_utf8(buffer) {
                             // converting to hex representation in case of failure
                             Err(_) => Cow::from(format!(
                                 "[HEX] {}",
-                                buffer
-                                    .iter()
-                                    .map(|&value| format!("{:02X}", value))
-                                    .collect::<String>(),
+                                buffer.iter().fold(String::new(), |mut output, b| {
+                                    let _ = write!(output, "{b:02X}");
+                                    output
+                                }),
                             )),
 
                             Ok(s) => Cow::from(s),

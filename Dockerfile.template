@@ -1,4 +1,9 @@
-FROM --platform=linux/arm64 rustlang/rust:nightly-bullseye as builder
+ARG DOCKER_PLATFORM
+
+# Use a multi-stage build for the builder stage
+FROM --platform=$DOCKER_PLATFORM rustlang/rust:nightly-bullseye as builder
+
+ARG CARGO_TARGET
 
 RUN apt-get update \
     && apt-get install -y \
@@ -12,23 +17,34 @@ RUN apt-get update \
     musl-dev \
     musl-tools \
     pkg-config
+
 RUN rustup component add rust-src
-RUN rustup target add aarch64-unknown-linux-musl
+RUN rustup target add $CARGO_TARGET
 RUN cargo install bpf-linker
+
 COPY . /src
 WORKDIR /src
+
+# Needed for the compilation of eBPF part
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/llvm-16/lib/
-#RUN cargo clippy --target=aarch64-unknown-linux-musl --workspace --exclude=ssl-injector -- -D warnings
+
+RUN cargo clippy --target=$CARGO_TARGET --workspace -- -D warnings
 RUN --mount=type=cache,target=/.root/cargo/registry \
     --mount=type=cache,target=/src/target \
     cargo xtask build-ebpf --release \
-    && cargo build --release --target=aarch64-unknown-linux-musl \
-    && cp /src/target/aarch64-unknown-linux-musl/release/ssl-injector /usr/sbin \
+    && cargo build --release --target=$CARGO_TARGET \
+    && cp /src/target/$CARGO_TARGET/release/ssl-injector /usr/sbin \
     && cp /src/log4rs.yml /usr/sbin
 
-FROM --platform=linux/arm64 debian:bullseye
-# runc links those libraries dynamically
+
+# Use a multi-stage build for the final stage
+FROM --platform=$DOCKER_PLATFORM debian:bullseye
+
 RUN apt update && apt install -y curl
+
+# Copy the ssl-injector binary and log4rs configuration from the builder stage
 COPY --from=builder /usr/sbin/ssl-injector /usr/sbin/
 COPY --from=builder /usr/sbin/log4rs.yml /etc
+
+# Set the entry point for the final image
 ENTRYPOINT [ "/usr/sbin/ssl-injector" ]
