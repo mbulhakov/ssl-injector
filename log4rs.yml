@@ -24,15 +24,3 @@ root:
   appenders:
     - ssl_injector_stdout
     - ssl_injector_rolling_file
-
-loggers:
-  want:
-    level: error
-    appenders:
-      - ssl_injector_stdout
-      - ssl_injector_rolling_file
-  mio::poll:
-    level: error
-    appenders:
-      - ssl_injector_stdout
-      - ssl_injector_rolling_file
