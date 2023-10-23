@@ -21,4 +21,4 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # If not ARM64, it will use the default values for x86_64
 fi
 
-docker run  --privileged --platform=$DOCKER_PLATFORM ssl-injector:latest
+docker run --privileged --platform=$DOCKER_PLATFORM ssl-injector:latest
