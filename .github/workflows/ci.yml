@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Docker Build
+    name: Docker Build & Run
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Repository
@@ -18,3 +18,7 @@ jobs:
 
       - name: Build Docker Image
         run: ./build_docker.sh
+
+      - name: Run Docker container for 3 minutes
+        run: ./run_docker_with_requests.sh
+        timeout-minutes: 3
