@@ -45,7 +45,7 @@ To run the container without any additional background HTTP requests one can run
 ./run_docker.sh
 ```
 
-It is also possible to run the container with further execution of two simple bash loops with requests:
+It is also possible to run the container with further execution of two simple bash loops with requests (runs for 180 seconds):
 ```bash
 ./run_docker_with_requests.sh
 ```

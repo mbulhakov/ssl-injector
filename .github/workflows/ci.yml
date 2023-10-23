@@ -21,4 +21,3 @@ jobs:
 
       - name: Run Docker container for 3 minutes
         run: ./run_docker_with_requests.sh
-        timeout-minutes: 3
